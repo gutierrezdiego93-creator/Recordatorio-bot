@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Recordatorio</title>
+<style>
+  :root{
+    --electric:#2929FF;--ocean:#10275B;--mid:#044EC6;--lt:#4687F1;
+    --pale:#A2C6FF;--sky:#00C7FF;--border:#D7E6FF;--border2:#A2C6FF;
+    --bg:#ffffff;--bg2:#F0F6FF;--bg3:#F6FAFF;
+    --txt:#000D22;--txt2:#10275B;--txt3:#4687F1;
+    --red:#CC2222;--amber:#CC7700;--green:#0F8060;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Arial,Helvetica,sans-serif;background:var(--bg3);color:var(--txt);min-height:100vh;overscroll-behavior:none}
+
+  /* ── Auth ── */
+  #auth-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--bg3)}
+  .auth-card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:36px;width:380px;max-width:95vw}
+  .auth-logo{text-align:center;margin-bottom:28px}
+  .auth-logo .icon{width:56px;height:56px;background:var(--bg2);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 12px}
+  .auth-logo h1{font-size:20px;color:var(--ocean)}
+  .auth-logo p{font-size:12px;color:var(--txt3);margin-top:3px}
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:11px;color:var(--txt2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
+  .field input{width:100%;border:1px solid var(--border2);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--txt);outline:none;font-family:Arial,Helvetica,sans-serif}
+  .field input:focus{border-color:var(--electric)}
+  .btn-primary{width:100%;background:var(--electric);color:#fff;border:none;border-radius:8px;padding:11px;font-size:14px;font-weight:bold;cursor:pointer;font-family:Arial,Helvetica,sans-serif}
+  .btn-primary:hover{opacity:.88}
+  .auth-error{background:#FFF0EE;border:1px solid #FFCCC8;border-radius:6px;padding:8px 12px;font-size:12px;color:var(--red);margin-bottom:12px;display:none}
+
+  /* ── Layout ── */
+  #app{display:none}
+  .layout{display:flex;height:100vh;height:100dvh;overflow:hidden}
+
+  /* ── Sidebar ── */
+  .sidebar{width:210px;background:#fff;border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0}
+  .sidebar-header{padding:16px 18px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border)}
+  .logo-icon{width:30px;height:30px;background:var(--electric);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:15px}
+  .logo-txt{font-size:14px;font-weight:bold;color:var(--ocean)}
+  .user-section{padding:12px 18px;border-bottom:1px solid var(--border)}
+  .user-avatar{width:32px;height:32px;border-radius:50%;background:var(--electric);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:bold;flex-shrink:0}
+  .user-name{font-size:13px;font-weight:bold;color:var(--ocean)}
+  .user-role{font-size:10px;color:var(--txt3)}
+  nav{padding:8px 0;flex:1}
+  .nav-item{display:flex;align-items:center;gap:9px;padding:10px 18px;font-size:13px;color:var(--txt2);cursor:pointer;border-left:3px solid transparent}
+  .nav-item:hover{background:var(--bg3);color:var(--ocean)}
+  .nav-item.active{background:var(--bg2);color:var(--electric);font-weight:bold;border-left-color:var(--electric)}
+  .nav-item svg{width:16px;height:16px;flex-shrink:0}
+  .sidebar-footer{padding:10px 0;border-top:1px solid var(--border)}
+
+  /* ── Content ── */
+  .content{flex:1;overflow-y:auto;padding:24px;background:var(--bg3);-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain}
+  .page{display:none}.page.active{display:block}
+  .page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+  .page-title{font-size:18px;font-weight:bold;color:var(--ocean)}
+  .page-sub{font-size:12px;color:var(--txt3);margin-top:2px}
+
+  /* ── Cards ── */
+  .card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:16px 20px;margin-bottom:12px}
+  .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+  .metric{background:#fff;border:1px solid var(--border);border-radius:10px;padding:14px 16px;cursor:pointer;transition:border-color .15s,box-shadow .15s}
+  .metric:hover{border-color:var(--electric);box-shadow:0 2px 10px rgba(41,41,255,.1)}
+  .metric-val{font-size:26px;font-weight:bold;color:var(--ocean)}
+  .metric-lbl{font-size:11px;color:var(--txt3);margin-top:3px}
+  .metric-delta{font-size:11px;margin-top:5px;font-weight:bold}
+  .good{color:var(--green)}.bad{color:var(--red)}.warn{color:var(--amber)}
+
+  /* ── Badges ── */
+  .badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:bold}
+  .b-alta{background:#FFF0EE;color:var(--red);border:1px solid #FFCCC8}
+  .b-media{background:#FFF8EC;color:var(--amber);border:1px solid #FFD999}
+  .b-baja{background:#EDFFF5;color:var(--green);border:1px solid #B2EEDD}
+  .b-pendiente{background:var(--bg2);color:var(--mid);border:1px solid var(--border)}
+  .b-completado{background:#EDFFF5;color:var(--green);border:1px solid #B2EEDD}
+  .b-vencido{background:#FFF0EE;color:var(--red);border:1px solid #FFCCC8}
+
+  /* ── Recordatorios ── */
+  .rem-list{display:flex;flex-direction:column;gap:1px}
+  .rem-item{display:flex;align-items:center;gap:12px;padding:12px 16px;background:#fff;border:1px solid var(--border);border-radius:8px;margin-bottom:6px}
+  .rem-item:hover{border-color:var(--border2)}
+  .rem-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+  .rem-body{flex:1;min-width:0}
+  /* ── Matriz de Eisenhower ── */
+  .matrix-grid{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:auto auto;gap:12px;height:100%}
+  .quadrant{border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:8px;min-height:200px;border:1px solid transparent}
+  .q1{background:#fff1f1;border-color:#fca5a5}.q2{background:#f0fdf4;border-color:#86efac}
+  .q3{background:#fffbeb;border-color:#fcd34d}.q4{background:#f9fafb;border-color:#d1d5db}
+  .q-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px}
+  .q-tag{font-size:10px;font-weight:bold;text-transform:uppercase;letter-spacing:.5px}
+  .q1 .q-tag{color:#dc2626}.q2 .q-tag{color:#16a34a}.q3 .q-tag{color:#d97706}.q4 .q-tag{color:#6b7280}
+  .q-name{font-size:13px;font-weight:bold;color:var(--txt1);margin-top:2px}
+  .q-count{font-size:11px;padding:2px 8px;border-radius:20px;font-weight:bold}
+  .q1 .q-count{background:#fca5a5;color:#7f1d1d}.q2 .q-count{background:#86efac;color:#14532d}
+  .q3 .q-count{background:#fcd34d;color:#78350f}.q4 .q-count{background:#d1d5db;color:#374151}
+  .q-items{display:flex;flex-direction:column;gap:6px;flex:1}
+  .q-item{background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:8px 10px;cursor:pointer}
+  .q-item:hover{border-color:#93c5fd}
+  .q-item-title{font-size:12px;font-weight:bold;color:var(--ocean);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .q-item-desc{font-size:11px;color:var(--txt2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:1px}
+  .q-item-meta{font-size:10px;color:var(--txt3);margin-top:3px}
+  .axis-x{display:flex;justify-content:space-between;font-size:10px;color:var(--txt3);padding:2px 4px 0}
+  .axis-y{writing-mode:vertical-rl;transform:rotate(180deg);font-size:10px;color:var(--txt3);display:flex;justify-content:space-between;padding:4px 0;width:14px}
+  @media(max-width:700px){.matrix-grid{grid-template-columns:1fr;gap:10px}}
+  .rem-title{font-size:13px;font-weight:bold;color:var(--ocean);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .rem-desc{font-size:12px;color:var(--txt2);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .rem-meta{font-size:11px;color:var(--txt3);margin-top:2px}
+  .rem-actions{display:flex;gap:6px;flex-shrink:0}
+  .group-header{font-size:11px;font-weight:bold;color:var(--txt3);text-transform:uppercase;letter-spacing:.6px;padding:4px 2px 6px;margin-top:4px}
+  .btn-sm{background:transparent;color:var(--electric);border:1px solid var(--border2);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;font-family:Arial,Helvetica,sans-serif}
+  .btn-sm:hover{background:var(--bg2)}
+  .btn-sm.danger{color:var(--red);border-color:#FFCCC8}
+  .btn-sm.danger:hover{background:#FFF0EE}
+
+  /* ── Bars ── */
+  .bar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+  .bar-lbl{font-size:12px;color:var(--txt2);width:90px;flex-shrink:0}
+  .bar-track{flex:1;height:5px;background:var(--bg2);border-radius:3px;overflow:hidden}
+  .bar-fill{height:100%;border-radius:3px;transition:width .4s}
+  .bar-val{font-size:12px;color:var(--txt);width:34px;text-align:right;flex-shrink:0}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+  /* ── Modal ── */
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,13,34,.4);display:none;align-items:center;justify-content:center;z-index:100}
+  .modal-overlay.open{display:flex}
+  .modal{background:#fff;border-radius:12px;padding:24px;width:460px;max-width:95vw;border:1px solid var(--border)}
+  .modal h3{font-size:16px;font-weight:bold;color:var(--ocean);margin-bottom:16px}
+  .modal .field select{width:100%;border:1px solid var(--border2);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--txt);outline:none;font-family:Arial,Helvetica,sans-serif}
+  .modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:20px}
+
+  /* ── Score ring ── */
+  .score-ring{display:flex;align-items:center;gap:20px;padding:4px 0}
+
+  /* ── Tip ── */
+  .tip{background:var(--bg2);border-left:3px solid var(--electric);border-radius:0 8px 8px 0;padding:9px 13px;font-size:12px;color:var(--mid);margin-top:12px;line-height:1.6}
+
+  /* ── Filter bar ── */
+  .filter-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  .filter-chip{padding:5px 12px;font-size:12px;border:1px solid var(--border);border-radius:20px;cursor:pointer;background:#fff;color:var(--txt2);font-family:Arial,Helvetica,sans-serif}
+  .filter-chip.active{background:var(--electric);color:#fff;border-color:var(--electric)}
+
+  /* ── Prog ── */
+  .prog-track{height:5px;background:var(--bg2);border-radius:3px;overflow:hidden}
+  .prog-fill{height:100%;background:var(--electric);border-radius:3px}
+
+  /* ── Mobile topbar ── */
+  .mobile-topbar{display:none;align-items:center;gap:10px;flex-shrink:0;height:52px;padding:0 16px;background:#fff;border-bottom:1px solid var(--border)}
+  .mobile-topbar-title{font-size:15px;font-weight:bold;color:var(--ocean)}
+  .hamburger{background:none;border:none;cursor:pointer;padding:6px 8px;color:var(--ocean);font-size:22px;line-height:1;border-radius:6px;font-family:Arial,Helvetica,sans-serif}
+  .hamburger:hover{background:var(--bg2)}
+  .sidebar-backdrop{display:none;position:fixed;inset:0;background:rgba(0,13,34,.35);z-index:199}
+  .sidebar-backdrop.open{display:block}
+
+  @media(max-width:700px){
+    #app{flex-direction:column}
+    .layout{flex:1;min-height:0;height:auto}
+    .sidebar{
+      position:fixed;top:0;left:0;height:100vh;height:100dvh;width:240px;z-index:200;
+      transform:translateX(-100%);transition:transform .25s ease;
+      box-shadow:4px 0 24px rgba(0,0,0,.15)
+    }
+    .sidebar.open{transform:translateX(0)}
+    .mobile-topbar{display:flex}
+    .content{padding:16px;-webkit-overflow-scrolling:touch}
+    .page-header{flex-direction:column;align-items:stretch;gap:10px}
+    .page-header .btn-primary{width:100%}
+    .metrics{grid-template-columns:1fr 1fr}
+    .grid2{grid-template-columns:1fr}
+    .rem-item{flex-wrap:wrap}
+    .rem-actions{margin-left:22px}
+  }
+</style>
+</head>
+<body>
+
+<!-- ══ AUTH ══════════════════════════════════════════════════════════════════ -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="icon">🔔</div>
+      <h1>Recordatorio</h1>
+      <p>Gestión de pendientes</p>
+    </div>
+    <div id="auth-error" class="auth-error">Correo o contraseña incorrectos.</div>
+    <div class="field"><label>Correo electrónico</label>
+      <input type="email" id="inp-email" placeholder="tu@correo.com" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div class="field"><label>Contraseña</label>
+      <input type="password" id="inp-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="btn-primary" onclick="doLogin()">Iniciar sesión</button>
+    <p style="text-align:center;font-size:12px;color:var(--txt3);margin-top:12px">
+      Cada cuenta ve únicamente sus propios recordatorios
+    </p>
+  </div>
+</div>
+
+<!-- ══ APP ════════════════════════════════════════════════════════════════════ -->
+<div id="app">
+
+  <!-- Topbar mobile (fuera del scroll, ocupa espacio real) -->
+  <div class="mobile-topbar">
+    <button class="hamburger" onclick="openSidebar()">☰</button>
+    <span class="mobile-topbar-title">🔔 Recordatorio</span>
+  </div>
+
+  <div class="layout">
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <div class="logo-icon">🔔</div>
+        <span class="logo-txt">Recordatorio</span>
+      </div>
+      <div class="user-section">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="user-avatar" id="user-initials">--</div>
+          <div>
+            <div class="user-name" id="user-name">--</div>
+            <div class="user-role" id="user-role">--</div>
+          </div>
+        </div>
+      </div>
+      <nav>
+        <div class="nav-item active" onclick="goPage('inicio',this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          Inicio
+        </div>
+        <div class="nav-item" onclick="goPage('pendientes',this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Pendientes
+        </div>
+        <div class="nav-item" onclick="goPage('completados',this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          Completados
+        </div>
+        <div class="nav-item" onclick="goPage('matriz',this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg>
+          Matriz
+        </div>
+        <div class="nav-item" onclick="goPage('indicadores',this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          Indicadores
+        </div>
+        <div class="nav-item" id="nav-admin" style="display:none" onclick="goPage('admin',this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Usuarios
+        </div>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="nav-item" onclick="openModalPass()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          Cambiar contraseña
+        </div>
+        <div class="nav-item" onclick="doLogout()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          Salir
+        </div>
+      </div>
+    </div>
+
+    <!-- Backdrop mobile -->
+    <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="closeSidebar()"></div>
+
+    <!-- Content -->
+    <div class="content">
+
+      <!-- ─ INICIO ─ -->
+      <div id="page-inicio" class="page active">
+        <div class="page-header">
+          <div>
+            <div class="page-title" id="greeting">Bienvenido</div>
+            <div class="page-sub" id="today-date"></div>
+          </div>
+          <button class="btn-primary" style="font-size:12px;padding:8px 14px" onclick="openModal()">+ Nuevo recordatorio</button>
+        </div>
+        <div class="metrics" id="metrics-home"></div>
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;margin-bottom:10px">
+            <b style="color:var(--ocean);font-size:13px">Pendientes recientes</b>
+            <span style="font-size:11px;color:var(--txt3)" id="lbl-pendientes-count"></span>
+          </div>
+          <div id="list-home"></div>
+        </div>
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px">
+            <span style="color:var(--txt2)">Progreso del mes</span>
+            <span style="color:var(--electric);font-weight:bold" id="prog-pct">0%</span>
+          </div>
+          <div class="prog-track"><div class="prog-fill" id="prog-bar" style="width:0%"></div></div>
+          <p style="font-size:11px;color:var(--txt3);margin-top:6px" id="prog-label"></p>
+        </div>
+      </div>
+
+      <!-- ─ MATRIZ ─ -->
+      <div id="page-matriz" class="page">
+        <div class="page-header">
+          <h2 class="page-title">Matriz de Eisenhower</h2>
+        </div>
+        <div style="display:flex;gap:8px;flex:1;min-height:0">
+          <div class="axis-y" id="axis-y-label"><span>Importante</span><span>No importante</span></div>
+          <div style="flex:1;display:flex;flex-direction:column;gap:4px">
+            <div class="matrix-grid" id="matrix-grid"></div>
+            <div class="axis-x"><span>← Urgente</span><span>No urgente →</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─ PENDIENTES ─ -->
+      <div id="page-pendientes" class="page">
+        <div class="page-header">
+          <div><div class="page-title">Pendientes</div></div>
+          <button class="btn-primary" style="font-size:12px;padding:8px 14px" onclick="openModal()">+ Nuevo</button>
+        </div>
+        <div class="filter-bar" id="filter-cat"></div>
+        <div id="list-pendientes"></div>
+      </div>
+
+      <!-- ─ COMPLETADOS ─ -->
+      <div id="page-completados" class="page">
+        <div class="page-header">
+          <div><div class="page-title">Completados</div></div>
+        </div>
+        <div id="list-completados"></div>
+      </div>
+
+      <!-- ─ INDICADORES ─ -->
+      <div id="page-indicadores" class="page">
+        <div class="page-header">
+          <div><div class="page-title">Indicadores de rendimiento</div>
+          <div class="page-sub">¿Qué tan bien estás respondiendo a tus pendientes?</div></div>
+        </div>
+        <div class="metrics" id="metrics-kpi"></div>
+        <div class="grid2">
+          <div class="card">
+            <b style="font-size:13px;color:var(--ocean);display:block;margin-bottom:12px">Cumplimiento por prioridad</b>
+            <div id="bars-prio"></div>
+          </div>
+          <div class="card">
+            <b style="font-size:13px;color:var(--ocean);display:block;margin-bottom:12px">Cumplimiento por categoría</b>
+            <div id="bars-cat"></div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:0">
+          <div class="score-ring">
+            <svg width="90" height="90" viewBox="0 0 90 90">
+              <circle cx="45" cy="45" r="36" fill="none" stroke="var(--bg2)" stroke-width="9"/>
+              <circle cx="45" cy="45" r="36" fill="none" stroke="var(--electric)" stroke-width="9"
+                stroke-dasharray="226" id="score-circle" stroke-dashoffset="226" stroke-linecap="round"
+                transform="rotate(-90 45 45)"/>
+              <text x="45" y="42" text-anchor="middle" font-size="18" font-weight="bold" fill="var(--ocean)" id="score-txt">0</text>
+              <text x="45" y="56" text-anchor="middle" font-size="10" fill="var(--txt3)">/ 100</text>
+            </svg>
+            <div>
+              <p style="font-size:14px;font-weight:bold;color:var(--ocean)" id="score-label">–</p>
+              <div class="tip" id="score-tip" style="margin-top:8px"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─ ADMIN ─ -->
+      <div id="page-admin" class="page">
+        <div class="page-header">
+          <div><div class="page-title">Gestión de usuarios</div></div>
+          <button class="btn-primary" style="font-size:12px;padding:8px 14px" onclick="openModalUser()">+ Nuevo usuario</button>
+        </div>
+        <div id="list-usuarios"></div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /layout -->
+</div><!-- /app -->
+
+<!-- ══ MODAL NUEVO RECORDATORIO ══════════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-rem">
+  <div class="modal">
+    <h3>Nuevo recordatorio</h3>
+    <div class="field"><label>Título</label>
+      <input type="text" id="m-titulo" placeholder="¿Qué tienes que hacer?">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="field"><label>Categoría</label>
+        <select id="m-cat">
+          <option value="trabajo">💼 Trabajo</option>
+          <option value="personal">👤 Personal</option>
+          <option value="familia">👨‍👩‍👧 Familia</option>
+          <option value="finanzas">💰 Finanzas</option>
+          <option value="salud">🏥 Salud</option>
+          <option value="legal">📋 Legal</option>
+          <option value="compras">🛒 Compras</option>
+          <option value="educacion">📚 Educación</option>
+          <option value="otros">⚙️ Otros</option>
+        </select>
+      </div>
+      <div class="field"><label>Prioridad</label>
+        <select id="m-prio">
+          <option value="alta">🔴 Alta</option>
+          <option value="media" selected>🟡 Media</option>
+          <option value="baja">🟢 Baja</option>
+        </select>
+      </div>
+    </div>
+    <div class="field"><label>Fecha límite</label>
+      <input type="datetime-local" id="m-fecha">
+    </div>
+    <div class="field"><label>Notas (opcional)</label>
+      <input type="text" id="m-desc" placeholder="Detalles adicionales...">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-sm" onclick="closeModal()">Cancelar</button>
+      <button class="btn-primary" style="width:auto;padding:8px 20px" onclick="guardarRecordatorio()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL CAMBIAR CONTRASEÑA ═══════════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-pass">
+  <div class="modal">
+    <h3>🔑 Cambiar contraseña</h3>
+    <div id="pass-error" style="background:#FFF0EE;border:1px solid #FFCCC8;border-radius:6px;padding:8px 12px;font-size:12px;color:var(--red);margin-bottom:12px;display:none"></div>
+    <div id="pass-ok" style="background:#EDFFF5;border:1px solid #B2EEDD;border-radius:6px;padding:8px 12px;font-size:12px;color:var(--green);margin-bottom:12px;display:none">✅ Contraseña actualizada correctamente.</div>
+    <div class="field"><label>Contraseña actual</label><input type="password" id="p-actual" placeholder="Tu contraseña actual"></div>
+    <div class="field"><label>Nueva contraseña</label><input type="password" id="p-nueva" placeholder="Mínimo 6 caracteres"></div>
+    <div class="field"><label>Confirmar nueva contraseña</label><input type="password" id="p-confirm" placeholder="Repite la nueva contraseña"></div>
+    <div class="modal-actions">
+      <button class="btn-sm" onclick="closeModalPass()">Cancelar</button>
+      <button class="btn-primary" style="width:auto;padding:8px 20px" onclick="cambiarPassword()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL EDITAR RECORDATORIO ══════════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-edit">
+  <div class="modal">
+    <h3>✏️ Editar recordatorio</h3>
+    <input type="hidden" id="e-id">
+    <div class="field"><label>Título</label>
+      <input type="text" id="e-titulo" placeholder="¿Qué tienes que hacer?">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="field"><label>Categoría</label>
+        <select id="e-cat">
+          <option value="trabajo">💼 Trabajo</option>
+          <option value="personal">👤 Personal</option>
+          <option value="familia">👨‍👩‍👧 Familia</option>
+          <option value="finanzas">💰 Finanzas</option>
+          <option value="salud">🏥 Salud</option>
+          <option value="legal">📋 Legal</option>
+          <option value="compras">🛒 Compras</option>
+          <option value="educacion">📚 Educación</option>
+          <option value="otros">⚙️ Otros</option>
+        </select>
+      </div>
+      <div class="field"><label>Prioridad</label>
+        <select id="e-prio">
+          <option value="alta">🔴 Alta</option>
+          <option value="media">🟡 Media</option>
+          <option value="baja">🟢 Baja</option>
+        </select>
+      </div>
+    </div>
+    <div class="field"><label>Fecha y hora límite</label>
+      <input type="datetime-local" id="e-fecha">
+    </div>
+    <div class="field"><label>Notas (opcional)</label>
+      <input type="text" id="e-desc" placeholder="Detalles adicionales...">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-sm" onclick="closeEditModal()">Cancelar</button>
+      <button class="btn-primary" style="width:auto;padding:8px 20px" onclick="guardarEdicion()">Guardar cambios</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL NUEVO USUARIO ════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-user">
+  <div class="modal">
+    <h3>Nuevo usuario</h3>
+    <div class="field"><label>Nombre</label><input type="text" id="u-nombre" placeholder="Nombre completo"></div>
+    <div class="field"><label>Correo</label><input type="email" id="u-email" placeholder="correo@ejemplo.com"></div>
+    <div class="field"><label>Contraseña</label><input type="password" id="u-pass" placeholder="Mínimo 6 caracteres"></div>
+    <div class="field" style="display:flex;align-items:center;gap:8px">
+      <input type="checkbox" id="u-admin" style="width:16px;height:16px">
+      <label for="u-admin" style="text-transform:none;font-size:13px;color:var(--txt2)">Es administrador</label>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-sm" onclick="closeModalUser()">Cancelar</button>
+      <button class="btn-primary" style="width:auto;padding:8px 20px" onclick="guardarUsuario()">Crear usuario</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = '';
+let TOKEN = localStorage.getItem('token') || '';
+let ME    = null;
+let RECS  = [];
+
+const CAT_EMOJI = {trabajo:'💼',personal:'👤',familia:'👨‍👩‍👧',finanzas:'💰',
+  salud:'🏥',legal:'📋',compras:'🛒',educacion:'📚',otros:'⚙️'};
+const PRIO_DOT  = {alta:'var(--red)',media:'var(--amber)',baja:'var(--green)'};
+
+// ── Auth ──────────────────────────────────────────────────────────────────────
+async function doLogin(){
+  const email = document.getElementById('inp-email').value.trim();
+  const pass  = document.getElementById('inp-pass').value;
+  const err   = document.getElementById('auth-error');
+  err.style.display='none';
+  try{
+    const r = await fetch(API+'/api/auth/login',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({email,password:pass})
+    });
+    if(!r.ok){err.style.display='block';return;}
+    const d = await r.json();
+    TOKEN = d.token;
+    localStorage.setItem('token',TOKEN);
+    await initApp();
+  }catch(e){err.style.display='block';}
+}
+
+function doLogout(){
+  localStorage.removeItem('token');
+  TOKEN=''; ME=null;
+  document.getElementById('app').style.display='none';
+  document.getElementById('auth-screen').style.display='flex';
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+async function initApp(){
+  try{
+    const r = await apiFetch('/api/auth/me');
+    if(!r){doLogout();return;}
+    ME = r;
+    document.getElementById('auth-screen').style.display='none';
+    const isMobile = window.innerWidth <= 700;
+    const appEl = document.getElementById('app');
+    appEl.style.display = isMobile ? 'flex' : 'block';
+    if(isMobile){
+      const fixH = () => { appEl.style.height = window.innerHeight + 'px'; };
+      fixH();
+      window.addEventListener('resize', fixH, {passive:true});
+    }
+    requestAnimationFrame(()=>{ document.querySelector('.content').scrollTop=0; });
+    document.getElementById('user-name').textContent = ME.nombre;
+    document.getElementById('user-initials').textContent = ME.nombre.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+    document.getElementById('user-role').textContent = ME.es_admin ? 'Administrador' : 'Usuario';
+    if(ME.es_admin) document.getElementById('nav-admin').style.display='flex';
+
+    // fecha
+    const now = new Date();
+    document.getElementById('greeting').textContent = 'Buenos días, '+ME.nombre.split(' ')[0];
+    document.getElementById('today-date').textContent = now.toLocaleDateString('es-MX',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+    await loadAll();
+  }catch(e){doLogout();}
+}
+
+async function loadAll(){
+  RECS = await apiFetch('/api/recordatorios') || [];
+  renderHome();
+  renderPendientes();
+  renderCompletados();
+  renderMatriz();
+  await renderIndicadores();
+  if(ME.es_admin) await renderAdmin();
+}
+
+// ── Matriz de Eisenhower ───────────────────────────────────────────────────────
+const QUADRANTS = [
+  {id:'q1', tag:'Q1 · Hacer ahora',  name:'Urgente + Importante',    cls:'q1'},
+  {id:'q2', tag:'Q2 · Programar',    name:'No urgente + Importante', cls:'q2'},
+  {id:'q3', tag:'Q3 · Delegar',      name:'Urgente + No importante', cls:'q3'},
+  {id:'q4', tag:'Q4 · Eliminar',     name:'No urgente + No imp.',    cls:'q4'},
+];
+
+function renderMatriz(){
+  const pendientes = RECS.filter(r => r.estado === 'pendiente' || r.estado === 'vencido');
+  let html = '';
+  for(const q of QUADRANTS){
+    const items = pendientes.filter(r => r.cuadrante === q.id);
+    const sinQ  = q.id === 'q2' ? pendientes.filter(r => !r.cuadrante) : [];
+    const todos = [...items, ...sinQ];
+    html += `<div class="quadrant ${q.cls}">
+      <div class="q-head">
+        <div>
+          <div class="q-tag">${q.tag}</div>
+          <div class="q-name">${q.name}</div>
+        </div>
+        <div class="q-count">${todos.length}</div>
+      </div>
+      <div class="q-items">
+        ${todos.slice(0,6).map(r => {
+          const fecha = r.fecha_limite ? new Date(r.fecha_limite).toLocaleDateString('es-MX',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : 'Sin fecha';
+          return `<div class="q-item" onclick="openEditModal(${r.id})">
+            <div class="q-item-title">${r.titulo}</div>
+            ${r.descripcion ? `<div class="q-item-desc">${r.descripcion}</div>` : ''}
+            <div class="q-item-meta">📅 ${fecha}</div>
+          </div>`;
+        }).join('')}
+        ${todos.length > 6 ? `<div style="font-size:11px;color:var(--txt3);text-align:center;padding:4px">+${todos.length-6} más</div>` : ''}
+        ${todos.length === 0 ? `<div style="font-size:12px;color:var(--txt3);padding:8px 0">Sin tareas en este cuadrante</div>` : ''}
+      </div>
+    </div>`;
+  }
+  document.getElementById('matrix-grid').innerHTML = html;
+}
+
+// ── API helper ────────────────────────────────────────────────────────────────
+async function apiFetch(url,opts={}){
+  const r = await fetch(API+url,{
+    ...opts,
+    headers:{'Authorization':'Bearer '+TOKEN,'Content-Type':'application/json',...(opts.headers||{})}
+  });
+  if(r.status===401){doLogout();return null;}
+  if(!r.ok) return null;
+  return r.json();
+}
+
+// ── Agrupación por fecha (reutilizable) ───────────────────────────────────────
+function keyFecha(r){
+  const hoy=new Date(); hoy.setHours(0,0,0,0);
+  const man=new Date(hoy); man.setDate(hoy.getDate()+1);
+  const pas=new Date(hoy); pas.setDate(hoy.getDate()+2);
+  if(r.estado==='vencido') return 0;
+  if(!r.fecha_limite) return 5;
+  const f=new Date(r.fecha_limite); f.setHours(0,0,0,0);
+  if(f<hoy) return 0;
+  if(f.getTime()===hoy.getTime()) return 1;
+  if(f.getTime()===man.getTime()) return 2;
+  if(f.getTime()===pas.getTime()) return 3;
+  return 4;
+}
+
+function renderGrupos(items, containerId, showComplete=true){
+  const el=document.getElementById(containerId);
+  if(!items.length){ el.innerHTML='<p style="color:var(--txt3);font-size:13px;padding:8px 0">🎉 ¡Sin elementos!</p>'; return; }
+  const sorted=[...items].sort((a,b)=>{
+    const kd=keyFecha(a)-keyFecha(b); if(kd!==0) return kd;
+    if(!a.fecha_limite&&!b.fecha_limite) return 0;
+    if(!a.fecha_limite) return 1; if(!b.fecha_limite) return -1;
+    return new Date(a.fecha_limite)-new Date(b.fecha_limite);
+  });
+  const grupos=[
+    {k:0,label:'⚠️ Vencidos'},{k:1,label:'📅 Hoy'},{k:2,label:'📅 Mañana'},
+    {k:3,label:'📅 Pasado mañana'},{k:4,label:'📆 Próximos días'},{k:5,label:'📌 Sin fecha'},
+  ];
+  let html='';
+  for(const g of grupos){
+    const gi=sorted.filter(r=>keyFecha(r)===g.k);
+    if(!gi.length) continue;
+    html+=`<div style="margin-bottom:14px"><div class="group-header">${g.label} <span style="font-weight:normal;text-transform:none;letter-spacing:0">(${gi.length})</span></div>${gi.map(r=>remHTML(r,showComplete)).join('')}</div>`;
+  }
+  el.innerHTML=html;
+}
+
+// ── Render helpers ────────────────────────────────────────────────────────────
+function remHTML(r,showComplete=true){
+  const fecha = r.fecha_limite ? new Date(r.fecha_limite).toLocaleDateString('es-MX',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : 'Sin fecha';
+  const dot = PRIO_DOT[r.prioridad]||'var(--amber)';
+  const cat = CAT_EMOJI[r.categoria]||'⚙️';
+  const vencido = r.estado==='vencido' ? '<span class="badge b-vencido" style="margin-left:6px">Vencido</span>' : '';
+  return `<div class="rem-item">
+    <div class="rem-dot" style="background:${dot}"></div>
+    <div class="rem-body">
+      <div class="rem-title">${r.titulo}</div>
+      ${r.descripcion ? `<div class="rem-desc">${r.descripcion}</div>` : ''}
+      <div class="rem-meta">${cat} ${r.categoria} &nbsp;·&nbsp; 📅 ${fecha}${vencido}</div>
+    </div>
+    <div class="rem-actions">
+      ${showComplete && r.estado==='pendiente' ? `<button class="btn-sm" onclick="completar(${r.id})">Listo</button>` : ''}
+      <button class="btn-sm" onclick="openEditModal(${r.id})" title="Editar">✏️</button>
+      <button class="btn-sm danger" onclick="eliminar(${r.id})">✕</button>
+    </div>
+  </div>`;
+}
+
+function renderHome(){
+  const pend = RECS.filter(r=>r.estado==='pendiente');
+  const comp = RECS.filter(r=>r.estado==='completado');
+  const venc = RECS.filter(r=>r.estado==='vencido');
+  const today = pend.filter(r=>r.fecha_limite&&new Date(r.fecha_limite).toDateString()===new Date().toDateString());
+
+  document.getElementById('metrics-home').innerHTML = `
+    <div class="metric" onclick="goPageFilter('pendientes',null)" title="Ver pendientes">
+      <div class="metric-val">${pend.length}</div><div class="metric-lbl">Pendientes</div></div>
+    <div class="metric" onclick="goPageFilter('pendientes','vencidos')" title="Ver vencidos">
+      <div class="metric-val bad">${venc.length}</div><div class="metric-lbl">Vencidos</div></div>
+    <div class="metric" onclick="goPageFilter('completados',null)" title="Ver completados">
+      <div class="metric-val good">${comp.length}</div><div class="metric-lbl">Completados</div></div>
+    <div class="metric" onclick="goPageFilter('pendientes','hoy')" title="Ver para hoy">
+      <div class="metric-val" style="color:var(--electric)">${today.length}</div><div class="metric-lbl">Para hoy</div></div>`;
+
+  document.getElementById('lbl-pendientes-count').textContent = pend.length+' pendientes';
+  renderGrupos(pend, 'list-home');
+
+  const total = RECS.length;
+  const pct   = total ? Math.round(comp.length/total*100) : 0;
+  document.getElementById('prog-pct').textContent  = pct+'%';
+  document.getElementById('prog-bar').style.width  = pct+'%';
+  document.getElementById('prog-label').textContent = `${comp.length} de ${total} completados este mes`;
+}
+
+function renderPendientes(){
+  const pend = RECS.filter(r=>r.estado==='pendiente');
+  // filtros por categoría
+  const cats = [...new Set(pend.map(r=>r.categoria))];
+  const filterBar = document.getElementById('filter-cat');
+  filterBar.innerHTML = '<button class="filter-chip active" onclick="filterPend(null,this)">Todos</button>' +
+    cats.map(c=>`<button class="filter-chip" onclick="filterPend('${c}',this)">${CAT_EMOJI[c]||''} ${c}</button>`).join('');
+  renderPendList(pend);
+}
+
+function filterPend(cat, el){
+  document.querySelectorAll('#filter-cat .filter-chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  const pend = RECS.filter(r=>r.estado==='pendiente'&&(!cat||r.categoria===cat));
+  renderPendList(pend);
+}
+
+function renderPendList(pend){
+  renderGrupos(pend, 'list-pendientes', true);
+}
+
+function renderCompletados(){
+  const comp = RECS.filter(r=>r.estado==='completado');
+  if(!comp.length){
+    document.getElementById('list-completados').innerHTML='<p style="color:var(--txt3);font-size:13px;padding:8px 0">Aún no has completado recordatorios.</p>';
+    return;
+  }
+  const hoy=new Date(); hoy.setHours(0,0,0,0);
+  const ayer=new Date(hoy); ayer.setDate(hoy.getDate()-1);
+  const semana=new Date(hoy); semana.setDate(hoy.getDate()-7);
+
+  const keyComp=r=>{
+    if(!r.completado_en) return 3;
+    const f=new Date(r.completado_en); f.setHours(0,0,0,0);
+    if(f.getTime()===hoy.getTime()) return 0;
+    if(f.getTime()===ayer.getTime()) return 1;
+    if(f>=semana) return 2;
+    return 3;
+  };
+  const sorted=[...comp].sort((a,b)=>{
+    const kd=keyComp(a)-keyComp(b); if(kd!==0) return kd;
+    return new Date(b.completado_en||0)-new Date(a.completado_en||0);
+  });
+  const grupos=[
+    {k:0,label:'✅ Completados hoy'},
+    {k:1,label:'✅ Completados ayer'},
+    {k:2,label:'✅ Esta semana'},
+    {k:3,label:'✅ Anteriores'},
+  ];
+  let html='';
+  for(const g of grupos){
+    const gi=sorted.filter(r=>keyComp(r)===g.k);
+    if(!gi.length) continue;
+    html+=`<div style="margin-bottom:14px"><div class="group-header">${g.label} <span style="font-weight:normal;text-transform:none;letter-spacing:0">(${gi.length})</span></div>${gi.map(r=>remHTML(r,false)).join('')}</div>`;
+  }
+  document.getElementById('list-completados').innerHTML=html;
+}
+
+async function renderIndicadores(){
+  const stats = await apiFetch('/api/stats');
+  if(!stats) return;
+
+  const score = stats.score;
+  const dash  = 226;
+  document.getElementById('score-circle').style.strokeDashoffset = Math.round(dash-(dash*score/100));
+  document.getElementById('score-txt').textContent = score;
+  const lbl = score>=80?'Excelente 🏆':score>=60?'Bien 👍':score>=40?'Regular ⚠️':'Necesita mejorar ❌';
+  document.getElementById('score-label').textContent = 'Rendimiento: '+lbl;
+  document.getElementById('score-tip').innerHTML = `💡 ${stats.vencidos} vencidos activos. Cerrarlos subiría tu score significativamente.`;
+
+  document.getElementById('metrics-kpi').innerHTML = `
+    <div class="metric"><div class="metric-val">${stats.pct_a_tiempo}%</div><div class="metric-lbl">Completado a tiempo</div></div>
+    <div class="metric"><div class="metric-val">${stats.prom_horas_cierre}h</div><div class="metric-lbl">Prom. cierre</div></div>
+    <div class="metric"><div class="metric-val bad">${stats.vencidos}</div><div class="metric-lbl">Vencidos activos</div></div>
+    <div class="metric"><div class="metric-val good">${stats.completados}</div><div class="metric-lbl">Completados</div></div>`;
+
+  // Barras prioridad
+  const prioColors = {alta:'var(--electric)',media:'var(--amber)',baja:'var(--green)'};
+  document.getElementById('bars-prio').innerHTML = Object.entries(stats.por_prioridad).map(([k,v])=>`
+    <div class="bar-row">
+      <span class="bar-lbl">${k==='alta'?'🔴':k==='media'?'🟡':'🟢'} ${k}</span>
+      <div class="bar-track"><div class="bar-fill" style="width:${v.pct}%;background:${prioColors[k]||'var(--electric)'}"></div></div>
+      <span class="bar-val">${v.pct}%</span>
+    </div>`).join('');
+
+  // Barras categoría
+  const catOrder = ['trabajo','personal','familia','finanzas','salud','legal','compras','educacion','otros'];
+  document.getElementById('bars-cat').innerHTML = catOrder.filter(c=>stats.por_categoria[c]?.total>0).map(c=>{
+    const v = stats.por_categoria[c];
+    const pct = v ? v.pct : 0;
+    const color = pct>=80?'var(--electric)':pct>=50?'var(--amber)':'var(--red)';
+    return `<div class="bar-row">
+      <span class="bar-lbl">${CAT_EMOJI[c]||''} ${c}</span>
+      <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${color}"></div></div>
+      <span class="bar-val">${pct}%</span>
+    </div>`;
+  }).join('') || '<p style="color:var(--txt3);font-size:12px">Sin datos aún.</p>';
+}
+
+async function renderAdmin(){
+  const usuarios = await apiFetch('/api/admin/usuarios');
+  if(!usuarios) return;
+  document.getElementById('list-usuarios').innerHTML = usuarios.map(u=>`
+    <div class="rem-item">
+      <div class="user-avatar" style="width:32px;height:32px;font-size:12px">${u.nombre.slice(0,2).toUpperCase()}</div>
+      <div class="rem-body">
+        <div class="rem-title">${u.nombre}</div>
+        <div class="rem-meta">${u.email} &nbsp;·&nbsp; ${u.es_admin?'Admin':'Usuario'} &nbsp;·&nbsp; Telegram: ${u.telegram?'✅':'❌'}</div>
+      </div>
+    </div>`).join('');
+}
+
+// ── Acciones ──────────────────────────────────────────────────────────────────
+async function completar(id){
+  await apiFetch(`/api/recordatorios/${id}`,{method:'PATCH',body:JSON.stringify({estado:'completado'})});
+  await loadAll();
+}
+
+async function eliminar(id){
+  if(!confirm('¿Eliminar este recordatorio?')) return;
+  await apiFetch(`/api/recordatorios/${id}`,{method:'DELETE'});
+  await loadAll();
+}
+
+// ── Modal recordatorio ────────────────────────────────────────────────────────
+function openModal(){document.getElementById('modal-rem').classList.add('open')}
+function closeModal(){document.getElementById('modal-rem').classList.remove('open')}
+
+async function guardarRecordatorio(){
+  const titulo = document.getElementById('m-titulo').value.trim();
+  if(!titulo) return alert('Escribe un título.');
+  await apiFetch('/api/recordatorios',{method:'POST',body:JSON.stringify({
+    titulo,
+    categoria: document.getElementById('m-cat').value,
+    prioridad: document.getElementById('m-prio').value,
+    fecha_limite: document.getElementById('m-fecha').value || null,
+    descripcion: document.getElementById('m-desc').value || null,
+  })});
+  closeModal();
+  document.getElementById('m-titulo').value='';
+  document.getElementById('m-desc').value='';
+  await loadAll();
+}
+
+// ── Modal editar recordatorio ─────────────────────────────────────────────────
+function openEditModal(id){
+  const rec = RECS.find(r=>r.id===id);
+  if(!rec) return;
+  document.getElementById('e-id').value = rec.id;
+  document.getElementById('e-titulo').value = rec.titulo;
+  document.getElementById('e-desc').value = rec.descripcion||'';
+  document.getElementById('e-cat').value = rec.categoria;
+  document.getElementById('e-prio').value = rec.prioridad;
+  document.getElementById('e-fecha').value = rec.fecha_limite ? rec.fecha_limite.slice(0,16) : '';
+  document.getElementById('modal-edit').classList.add('open');
+}
+function closeEditModal(){document.getElementById('modal-edit').classList.remove('open')}
+
+async function guardarEdicion(){
+  const id    = document.getElementById('e-id').value;
+  const titulo= document.getElementById('e-titulo').value.trim();
+  if(!titulo) return alert('El título no puede estar vacío.');
+  const fecha = document.getElementById('e-fecha').value;
+  const r = await apiFetch(`/api/recordatorios/${id}`,{
+    method:'PATCH',
+    body:JSON.stringify({
+      titulo,
+      descripcion: document.getElementById('e-desc').value||null,
+      categoria:   document.getElementById('e-cat').value,
+      prioridad:   document.getElementById('e-prio').value,
+      fecha_limite: fecha||null,
+    })
+  });
+  if(r){ closeEditModal(); await loadAll(); }
+}
+
+// ── Modal cambiar contraseña ──────────────────────────────────────────────────
+function openModalPass(){
+  document.getElementById('p-actual').value='';
+  document.getElementById('p-nueva').value='';
+  document.getElementById('p-confirm').value='';
+  document.getElementById('pass-error').style.display='none';
+  document.getElementById('pass-ok').style.display='none';
+  document.getElementById('modal-pass').classList.add('open');
+}
+function closeModalPass(){document.getElementById('modal-pass').classList.remove('open')}
+
+async function cambiarPassword(){
+  const actual   = document.getElementById('p-actual').value;
+  const nueva    = document.getElementById('p-nueva').value;
+  const confirm  = document.getElementById('p-confirm').value;
+  const errEl    = document.getElementById('pass-error');
+  const okEl     = document.getElementById('pass-ok');
+  errEl.style.display='none'; okEl.style.display='none';
+
+  if(!actual||!nueva||!confirm){errEl.textContent='Completa todos los campos.';errEl.style.display='block';return;}
+  if(nueva!==confirm){errEl.textContent='Las contraseñas nuevas no coinciden.';errEl.style.display='block';return;}
+  if(nueva.length<6){errEl.textContent='La nueva contraseña debe tener al menos 6 caracteres.';errEl.style.display='block';return;}
+
+  const r = await fetch(API+'/api/auth/change-password',{
+    method:'POST',
+    headers:{'Authorization':'Bearer '+TOKEN,'Content-Type':'application/json'},
+    body:JSON.stringify({password_actual:actual,password_nuevo:nueva})
+  });
+  if(r.ok){
+    okEl.style.display='block';
+    setTimeout(()=>closeModalPass(),1500);
+  } else {
+    const d = await r.json().catch(()=>({}));
+    errEl.textContent = d.detail||'Error al cambiar la contraseña.';
+    errEl.style.display='block';
+  }
+}
+
+// ── Modal usuario ─────────────────────────────────────────────────────────────
+function openModalUser(){document.getElementById('modal-user').classList.add('open')}
+function closeModalUser(){document.getElementById('modal-user').classList.remove('open')}
+
+async function guardarUsuario(){
+  const nombre = document.getElementById('u-nombre').value.trim();
+  const email  = document.getElementById('u-email').value.trim();
+  const pass   = document.getElementById('u-pass').value;
+  const admin  = document.getElementById('u-admin').checked;
+  if(!nombre||!email||!pass) return alert('Completa todos los campos.');
+  const r = await apiFetch('/api/admin/usuarios',{method:'POST',body:JSON.stringify({nombre,email,password:pass,es_admin:admin})});
+  if(r){closeModalUser();await renderAdmin();}
+  else alert('Error: el correo ya puede estar registrado.');
+}
+
+// ── Navegación con filtro desde métricas ─────────────────────────────────────
+function goPageFilter(pageId, filter){
+  const navEl = document.querySelector(`.nav-item[onclick*="'${pageId}'"]`);
+  if(navEl) goPage(pageId, navEl);
+  if(!filter) return;
+  if(pageId === 'pendientes'){
+    if(filter === 'vencidos'){
+      renderPendList(RECS.filter(r => r.estado === 'vencido'));
+      // marcar chip activo
+      document.querySelectorAll('#filter-cat .filter-chip').forEach(c=>c.classList.remove('active'));
+    } else if(filter === 'hoy'){
+      const hoy = new Date().toDateString();
+      renderPendList(RECS.filter(r =>
+        (r.estado==='pendiente'||r.estado==='vencido') &&
+        r.fecha_limite && new Date(r.fecha_limite).toDateString()===hoy
+      ));
+      document.querySelectorAll('#filter-cat .filter-chip').forEach(c=>c.classList.remove('active'));
+    }
+  }
+}
+
+// ── Navegación ────────────────────────────────────────────────────────────────
+function goPage(id, el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  el.classList.add('active');
+  closeSidebar();
+}
+
+// ── Sidebar mobile ────────────────────────────────────────────────────────────
+function openSidebar(){
+  document.querySelector('.sidebar').classList.add('open');
+  document.getElementById('sidebar-backdrop').classList.add('open');
+}
+function closeSidebar(){
+  document.querySelector('.sidebar').classList.remove('open');
+  document.getElementById('sidebar-backdrop').classList.remove('open');
+}
+
+// ── Close modal on overlay click ──────────────────────────────────────────────
+document.getElementById('modal-rem').addEventListener('click',function(e){if(e.target===this)closeModal()});
+document.getElementById('modal-edit').addEventListener('click',function(e){if(e.target===this)closeEditModal()});
+document.getElementById('modal-user').addEventListener('click',function(e){if(e.target===this)closeModalUser()});
+document.getElementById('modal-pass').addEventListener('click',function(e){if(e.target===this)closeModalPass()});
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+if(TOKEN) initApp();
+</script>
+</body>
+</html>

@@ -1,0 +1,146 @@
+═══════════════════════════════════════════════════════════════
+  GUÍA DE DESPLIEGUE — RECORDATORIO BOT
+  Sigue estos pasos en orden. No te saltes ninguno.
+═══════════════════════════════════════════════════════════════
+
+
+PASO 1 — CREAR EL BOT EN TELEGRAM
+────────────────────────────────────────────────────────────────
+1. Abre Telegram en tu celular o PC
+2. Busca el contacto: @BotFather
+3. Escríbele: /newbot
+4. Te pedirá un nombre para mostrar → escribe: Recordatorio
+5. Te pedirá un username (debe terminar en "bot") → escribe: mi_recordatorio_bot
+   (si está tomado, prueba: recordatorio_diego_bot o similar)
+6. BotFather te enviará un TOKEN así:
+   1234567890:AAFxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+7. GUARDA ESE TOKEN, lo necesitas en el Paso 4.
+
+
+PASO 2 — CREAR CUENTA EN GITHUB
+────────────────────────────────────────────────────────────────
+1. Ve a https://github.com
+2. Clic en "Sign up"
+3. Crea tu cuenta con tu correo
+4. Verifica tu correo
+
+
+PASO 3 — SUBIR EL CÓDIGO A GITHUB
+────────────────────────────────────────────────────────────────
+1. Inicia sesión en GitHub
+2. Clic en el botón verde "New" (nuevo repositorio)
+3. Nombre del repositorio: recordatorio-bot
+4. Deja todo por defecto, clic en "Create repository"
+5. En la página del repositorio vacío, clic en "uploading an existing file"
+6. Arrastra TODOS los archivos de esta carpeta:
+   - main.py
+   - api.py
+   - bot.py
+   - database.py
+   - auth.py
+   - categories.py
+   - requirements.txt
+   - Procfile
+   - railway.toml
+   - La carpeta "static" con el index.html adentro
+7. Clic en "Commit changes"
+
+¡Tu código ya está en GitHub!
+
+
+PASO 4 — CREAR CUENTA EN RAILWAY Y DESPLEGAR
+────────────────────────────────────────────────────────────────
+1. Ve a https://railway.app
+2. Clic en "Login" → "Login with GitHub"
+3. Autoriza Railway a acceder a tu GitHub
+4. En el dashboard de Railway, clic en "New Project"
+5. Elige "Deploy from GitHub repo"
+6. Selecciona el repositorio: recordatorio-bot
+7. Railway detectará el proyecto automáticamente y empezará a desplegarlo
+
+AGREGAR LA BASE DE DATOS:
+8. En tu proyecto de Railway, clic en "+ New"
+9. Selecciona "Database" → "Add PostgreSQL"
+10. Railway crea la base de datos y la conecta automáticamente
+
+
+PASO 5 — CONFIGURAR LAS VARIABLES DE ENTORNO
+────────────────────────────────────────────────────────────────
+En Railway, en tu servicio (no en la base de datos):
+1. Clic en tu servicio "recordatorio-bot"
+2. Ve a la pestaña "Variables"
+3. Agrega estas variables una por una:
+
+   TELEGRAM_TOKEN    = [el token que te dio BotFather en el Paso 1]
+   SECRET_KEY        = [una cadena aleatoria larga, ej: xyz123abc456def789]
+   OPENAI_API_KEY    = [tu key de OpenAI, o déjala vacía si no tienes]
+
+   NOTA: DATABASE_URL Railway la configura solo cuando agregas PostgreSQL.
+
+4. Clic en "Deploy" para que tome los cambios
+
+
+PASO 6 — OBTENER TU URL PÚBLICA
+────────────────────────────────────────────────────────────────
+1. En Railway, ve a tu servicio
+2. Pestaña "Settings" → sección "Networking"
+3. Clic en "Generate Domain"
+4. Railway te da una URL así: recordatorio-bot.up.railway.app
+5. Abre esa URL en tu navegador → verás el dashboard
+
+¡La app está funcionando 24/7!
+
+
+PASO 7 — CREAR TU USUARIO EN EL DASHBOARD
+────────────────────────────────────────────────────────────────
+Railway crea automáticamente un usuario admin inicial:
+   Email:    admin@recordatorio.app
+   Password: admin1234
+
+1. Entra al dashboard con esas credenciales
+2. Ve a "Usuarios" en el menú
+3. Crea tu propio usuario con tu correo real
+4. Crea usuarios para cada persona (compañero, hermano, papá, etc.)
+
+
+PASO 8 — VINCULAR TELEGRAM CON TU CUENTA
+────────────────────────────────────────────────────────────────
+1. Abre Telegram, busca tu bot (el que creaste en el Paso 1)
+2. Escribe /start
+3. Escribe /login
+4. Ingresa tu correo y contraseña (los que creaste en el Paso 7)
+5. ¡Listo! Telegram ya está vinculado a tu cuenta
+
+Ahora puedes escribir o mandar audios al bot y se guardan en el dashboard.
+
+
+═══════════════════════════════════════════════════════════════
+  COMANDOS DEL BOT
+═══════════════════════════════════════════════════════════════
+
+/start        — Bienvenida
+/login        — Autenticarse
+/pendientes   — Ver tareas pendientes
+/hoy          — Ver tareas de hoy
+/completar    — Marcar una tarea como lista
+/stats        — Ver tus estadísticas rápidas
+
+También puedes escribir en lenguaje natural:
+  "Llamar a Jorge mañana a las 3pm"
+  "Pagar la factura del banco el viernes #finanzas"
+  "Reunión con el cliente el lunes, urgente"
+
+O enviar un AUDIO de voz y el bot lo transcribe automáticamente.
+
+
+═══════════════════════════════════════════════════════════════
+  RESUMEN DE COSTOS
+═══════════════════════════════════════════════════════════════
+
+  GitHub          → GRATIS
+  Railway (app)   → GRATIS (plan Starter, $5 crédito mensual)
+  Railway (DB)    → GRATIS (1 GB incluido)
+  Telegram API    → GRATIS (siempre)
+  OpenAI Whisper  → ~$0.006 por minuto de audio (casi nada)
+
+═══════════════════════════════════════════════════════════════
