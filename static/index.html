@@ -502,8 +502,8 @@
     <div id="detail-desc" class="detail-desc" style="display:none"></div>
     <div id="detail-date" class="detail-date"></div>
     <div class="detail-actions">
-      <button class="btn-primary" style="width:auto;padding:9px 20px;font-size:13px" onclick="completarDesdeDetalle()">✅ Marcar como completado</button>
-      <button class="btn-sm" onclick="editarDesdeDetalle()">✏️ Editar</button>
+      <button class="btn-primary" id="btn-detail-completar" style="width:auto;padding:9px 20px;font-size:13px" onclick="completarDesdeDetalle()">✅ Marcar como completado</button>
+      <button class="btn-sm" id="btn-detail-editar" onclick="event.stopPropagation();editarDesdeDetalle()">✏️ Editar</button>
       <button class="btn-sm" onclick="closeDetailModal()">Cerrar</button>
     </div>
   </div>
@@ -686,9 +686,11 @@ function openDetailModal(id){
     ? new Date(r.fecha_limite).toLocaleString('es-MX',{weekday:'long',day:'2-digit',month:'long',hour:'2-digit',minute:'2-digit'})
     : 'Sin fecha límite';
   document.getElementById('detail-date').textContent = '📅 ' + fecha;
+  // Guardar id en botones para acceso directo sin depender de _detailId
+  document.getElementById('btn-detail-completar').dataset.recId = id;
+  document.getElementById('btn-detail-editar').dataset.recId   = id;
   // Mostrar/ocultar botón completar según estado
-  const btnCompletar = document.querySelector('#modal-detail .btn-primary');
-  if(btnCompletar) btnCompletar.style.display = (r.estado === 'pendiente' || r.estado === 'vencido') ? '' : 'none';
+  document.getElementById('btn-detail-completar').style.display = (r.estado === 'pendiente' || r.estado === 'vencido') ? '' : 'none';
   document.getElementById('modal-detail').classList.add('open');
 }
 function closeDetailModal(){
@@ -696,15 +698,16 @@ function closeDetailModal(){
   _detailId = null;
 }
 async function completarDesdeDetalle(){
-  if(!_detailId) return;
-  await apiFetch(`/api/recordatorios/${_detailId}`,{method:'PATCH',body:JSON.stringify({estado:'completado'})});
+  const id = parseInt(document.getElementById('btn-detail-completar').dataset.recId);
+  if(!id) return;
+  await apiFetch(`/api/recordatorios/${id}`,{method:'PATCH',body:JSON.stringify({estado:'completado'})});
   closeDetailModal();
   await loadAll();
 }
 function editarDesdeDetalle(){
-  if(!_detailId) return;
-  const id = _detailId;
-  closeDetailModal();
+  const id = parseInt(document.getElementById('btn-detail-editar').dataset.recId);
+  if(!id) return;
+  document.getElementById('modal-detail').classList.remove('open');
   openEditModal(id);
 }
 
