@@ -703,8 +703,9 @@ async function completarDesdeDetalle(){
 }
 function editarDesdeDetalle(){
   if(!_detailId) return;
+  const id = _detailId;
   closeDetailModal();
-  openEditModal(_detailId);
+  openEditModal(id);
 }
 
 // ── API helper ────────────────────────────────────────────────────────────────
