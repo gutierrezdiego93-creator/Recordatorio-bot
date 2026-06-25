@@ -196,6 +196,10 @@
     <div class="field"><label>Contraseña</label>
       <input type="password" id="inp-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
     </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+      <input type="checkbox" id="inp-remember" style="width:16px;height:16px;cursor:pointer" checked>
+      <label for="inp-remember" style="font-size:12px;color:var(--txt2);cursor:pointer">Recordar mi sesión</label>
+    </div>
     <button class="btn-primary" onclick="doLogin()">Iniciar sesión</button>
     <p style="text-align:center;font-size:12px;color:var(--txt3);margin-top:12px">
       Cada cuenta ve únicamente sus propios recordatorios
@@ -529,15 +533,25 @@ let TOKEN = localStorage.getItem('token') || '';
 let ME    = null;
 let RECS  = [];
 
+// Auto-rellenar email guardado
+(function(){
+  const savedEmail = localStorage.getItem('saved_email');
+  if(savedEmail){
+    const el = document.getElementById('inp-email');
+    if(el) el.value = savedEmail;
+  }
+})();
+
 const CAT_EMOJI = {trabajo:'💼',personal:'👤',familia:'👨‍👩‍👧',finanzas:'💰',
   salud:'🏥',legal:'📋',compras:'🛒',educacion:'📚',otros:'⚙️'};
 const PRIO_DOT  = {alta:'var(--red)',media:'var(--amber)',baja:'var(--green)'};
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 async function doLogin(){
-  const email = document.getElementById('inp-email').value.trim();
-  const pass  = document.getElementById('inp-pass').value;
-  const err   = document.getElementById('auth-error');
+  const email    = document.getElementById('inp-email').value.trim();
+  const pass     = document.getElementById('inp-pass').value;
+  const remember = document.getElementById('inp-remember').checked;
+  const err      = document.getElementById('auth-error');
   err.style.display='none';
   try{
     const r = await fetch(API+'/api/auth/login',{
@@ -548,6 +562,11 @@ async function doLogin(){
     const d = await r.json();
     TOKEN = d.token;
     localStorage.setItem('token',TOKEN);
+    if(remember){
+      localStorage.setItem('saved_email', email);
+    } else {
+      localStorage.removeItem('saved_email');
+    }
     await initApp();
   }catch(e){err.style.display='block';}
 }
@@ -557,6 +576,12 @@ function doLogout(){
   TOKEN=''; ME=null;
   document.getElementById('app').style.display='none';
   document.getElementById('auth-screen').style.display='flex';
+  // Poner foco en contraseña si email ya está guardado
+  const savedEmail = localStorage.getItem('saved_email');
+  if(savedEmail){
+    document.getElementById('inp-email').value = savedEmail;
+    setTimeout(()=>document.getElementById('inp-pass').focus(),100);
+  }
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────

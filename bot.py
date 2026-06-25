@@ -382,6 +382,7 @@ async def callback_cuadrante(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     usuario = await get_usuario_autenticado(query.message.chat_id)
     if not usuario:
         return
+    rec_data = {}
     async with AsyncSessionLocal() as db:
         result = await db.execute(
             select(Recordatorio).where(and_(
@@ -393,10 +394,29 @@ async def callback_cuadrante(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         if rec:
             rec.cuadrante = Cuadrante(q_val)
             await db.commit()
+            rec_data = {
+                "titulo": rec.titulo,
+                "descripcion": rec.descripcion,
+                "fecha_limite": rec.fecha_limite,
+                "categoria": rec.categoria.value if rec.categoria else "otros",
+                "prioridad": rec.prioridad.value if rec.prioridad else "media",
+            }
     q = CUADRANTE_INFO[q_val]
-    await query.edit_message_reply_markup(reply_markup=None)
+    titulo = rec_data.get("titulo", "")
+    desc   = rec_data.get("descripcion", "")
+    fecha  = rec_data.get("fecha_limite")
+    fecha_str = fecha.strftime("%d/%m/%Y %H:%M") if fecha else "Sin fecha"
+
+    lineas = [
+        f"{q['emoji']} *{q['label']}* · _{q['desc']}_\n",
+        f"📝 *{titulo}*",
+    ]
+    if desc:
+        lineas.append(f"_{desc}_")
+    lineas.append(f"📅 {fecha_str}")
+
     await query.edit_message_text(
-        f"✅ *Guardado en {q['label']}*\n_{q['desc']}_",
+        "\n".join(lineas),
         parse_mode="Markdown"
     )
 
