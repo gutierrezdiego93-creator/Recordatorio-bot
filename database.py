@@ -2,7 +2,7 @@ import os
 from datetime import datetime
 from sqlalchemy import (
     Column, Integer, String, Text, DateTime,
-    Boolean, ForeignKey, Enum as SAEnum
+    Boolean, ForeignKey, Enum as SAEnum, text
 )
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase, relationship
@@ -96,4 +96,11 @@ async def get_db():
 async def init_db():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        # Migraciones: agregar columnas nuevas si no existen (seguro ejecutar múltiples veces)
+        await conn.execute(text(
+            "ALTER TABLE recordatorios ADD COLUMN IF NOT EXISTS cuadrante VARCHAR(2)"
+        ))
+        await conn.execute(text(
+            "ALTER TABLE recordatorios ADD COLUMN IF NOT EXISTS completado_en TIMESTAMP"
+        ))
     print("✅ Base de datos lista")
