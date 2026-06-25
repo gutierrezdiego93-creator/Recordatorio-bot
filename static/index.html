@@ -234,6 +234,10 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
           Inicio
         </div>
+        <div class="nav-item" onclick="goPage('matriz',this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg>
+          Matriz
+        </div>
         <div class="nav-item" onclick="goPage('pendientes',this)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
           Pendientes
@@ -241,10 +245,6 @@
         <div class="nav-item" onclick="goPage('completados',this)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
           Completados
-        </div>
-        <div class="nav-item" onclick="goPage('matriz',this)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg>
-          Matriz
         </div>
         <div class="nav-item" onclick="goPage('indicadores',this)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
@@ -652,6 +652,9 @@ function openDetailModal(id){
     ? new Date(r.fecha_limite).toLocaleString('es-MX',{weekday:'long',day:'2-digit',month:'long',hour:'2-digit',minute:'2-digit'})
     : 'Sin fecha límite';
   document.getElementById('detail-date').textContent = '📅 ' + fecha;
+  // Mostrar/ocultar botón completar según estado
+  const btnCompletar = document.querySelector('#modal-detail .btn-primary');
+  if(btnCompletar) btnCompletar.style.display = (r.estado === 'pendiente' || r.estado === 'vencido') ? '' : 'none';
   document.getElementById('modal-detail').classList.add('open');
 }
 function closeDetailModal(){
@@ -719,21 +722,27 @@ function renderGrupos(items, containerId, showComplete=true){
 }
 
 // ── Render helpers ────────────────────────────────────────────────────────────
+const Q_BADGE = {
+  q1:{bg:'#fca5a5',color:'#7f1d1d',label:'Q1 · Hacer ahora'},
+  q2:{bg:'#86efac',color:'#14532d',label:'Q2 · Programar'},
+  q3:{bg:'#fcd34d',color:'#78350f',label:'Q3 · Delegar'},
+  q4:{bg:'#d1d5db',color:'#374151',label:'Q4 · Eliminar'},
+};
 function remHTML(r,showComplete=true){
   const fecha = r.fecha_limite ? new Date(r.fecha_limite).toLocaleDateString('es-MX',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : 'Sin fecha';
   const dot = PRIO_DOT[r.prioridad]||'var(--amber)';
   const cat = CAT_EMOJI[r.categoria]||'⚙️';
   const vencido = r.estado==='vencido' ? '<span class="badge b-vencido" style="margin-left:6px">Vencido</span>' : '';
-  return `<div class="rem-item">
-    <div class="rem-dot" style="background:${dot}"></div>
-    <div class="rem-body">
-      <div class="rem-title">${r.titulo}</div>
-      ${r.descripcion ? `<div class="rem-desc">${r.descripcion}</div>` : ''}
-      <div class="rem-meta">${cat} ${r.categoria} &nbsp;·&nbsp; 📅 ${fecha}${vencido}</div>
+  const qb = r.cuadrante && Q_BADGE[r.cuadrante] ? Q_BADGE[r.cuadrante] : null;
+  const qBadge = qb ? `<span style="display:inline-block;padding:1px 7px;border-radius:20px;font-size:10px;font-weight:bold;background:${qb.bg};color:${qb.color};margin-right:6px">${qb.label}</span>` : '';
+  return `<div class="rem-item" style="cursor:pointer" onclick="openDetailModal(${r.id})">
+    <div class="rem-dot" style="background:${dot};flex-shrink:0"></div>
+    <div class="rem-body" style="min-width:0;flex:1">
+      <div class="rem-title" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${r.titulo}</div>
+      <div class="rem-meta">${qBadge}${cat} ${r.categoria} &nbsp;·&nbsp; 📅 ${fecha}${vencido}</div>
     </div>
-    <div class="rem-actions">
+    <div class="rem-actions" onclick="event.stopPropagation()">
       ${showComplete && r.estado==='pendiente' ? `<button class="btn-sm" onclick="completar(${r.id})">Listo</button>` : ''}
-      <button class="btn-sm" onclick="openEditModal(${r.id})" title="Editar">✏️</button>
       <button class="btn-sm danger" onclick="eliminar(${r.id})">✕</button>
     </div>
   </div>`;
